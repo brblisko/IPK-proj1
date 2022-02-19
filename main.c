@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
+#include <unistd.h>
 
 bool fetchCpuName(char *cpuName)
 {
@@ -51,32 +52,57 @@ bool calcCpuUsage(float *cpuUsage)
         fprintf(stderr, "ERROR - cannot open file \"/proc/stat\"\n");
         return false;
     }
+    float prevSum = 0, prevIdle = 0;
+    float sum = 0, idle = 0;
 
-    if (fgets(buffer, 10000, fp) == NULL)
+    for (int i = 0; i < 2; i++)
     {
-        fprintf(stderr, "ERROR - cannot read file \"/proc/stat\"\n");
-        return false;
+        float tmpSum = 0, tmpIdle = 0;
+        if (fgets(buffer, 10000, fp) == NULL)
+        {
+            fprintf(stderr, "ERROR - cannot read file \"/proc/stat\"\n");
+            return false;
+        }
+        char *token = strtok(buffer, " ");
+        int j = 0;
+
+        while (token != NULL)
+        {
+            token = strtok(NULL, " ");
+            if (token != NULL && j != 3 && j != 4)
+            {
+                tmpSum += atof(token);
+            }
+            if (j == 3 || j == 4)
+            {
+                tmpIdle = atof(token);
+            }
+
+            j++;
+            if (j == 8)
+            {
+                break;
+            }
+        }
+
+        if (i == 0)
+        {
+            prevSum = tmpSum;
+            prevIdle = tmpIdle;
+        }
+        if (i == 1)
+        {
+            sum = tmpSum;
+            idle = tmpIdle;
+        }
+        sleep(1);
     }
     fclose(fp);
-    char *token = strtok(buffer, " ");
-    float sum = 0, idle = 0;
-    int i = 0;
-    while (token != NULL)
-    {
-        token = strtok(NULL, " ");
-        if (token != NULL)
-        {
-            sum += atoi(token);
-        }
-        if (i == 3)
-        {
-            idle = atoi(token);
-        }
 
-        i++;
-    }
-
-    *cpuUsage = 100 - ((idle * 100) / sum);
+    float totalD = 0, idleD = 0;
+    totalD = (idle + sum) - (prevIdle + prevSum);
+    idleD = idle - prevIdle;
+    *cpuUsage = 100 - (((totalD - idleD) / totalD) * 100);
 
     return true;
 }
