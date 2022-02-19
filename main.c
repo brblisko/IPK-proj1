@@ -3,6 +3,28 @@
 #include <stdbool.h>
 #include <string.h>
 
+bool fetchCpuName(char *cpuName)
+{
+    FILE *fp = popen("cat /proc/cpuinfo | grep \"model name\" | head -n 1 | awk -F  \":\" \'/1/ {print $2}\'", "r");
+    if (fp == NULL)
+    {
+        fprintf(stderr, "ERROR - cannot open file \"/proc/cpuinfo\"\n");
+        return false;
+    }
+    if (fgets(cpuName, 1000, fp) == NULL)
+    {
+        fprintf(stderr, "ERROR - cannot read file \"/proc/cpuinfo\"\n");
+        return false;
+    }
+    pclose(fp);
+    if (cpuName == NULL)
+    {
+        fprintf(stderr, "ERROR - unexpected error");
+        return false;
+    }
+    return true;
+}
+
 bool fetchHostName(char *hostName)
 {
     FILE *fp = fopen("/proc/sys/kernel/hostname", "r");
@@ -81,18 +103,20 @@ int main(int argc, char **argv)
 {
     int port = 0;
     float cpuUsage = 0;
-    char hostName[100];
+    char hostName[100], cpuName[1000];
 
     if (!checkargs(argc, argv, &port) ||
         !calcCpuUsage(&cpuUsage) ||
-        !fetchHostName(hostName))
+        !fetchHostName(hostName) ||
+        !fetchCpuName(cpuName))
     {
         return 1;
     }
 
     printf("%d\n", port);
     printf("%f\n", cpuUsage);
-    printf("%s\n", hostName);
+    printf("%s", hostName);
+    printf("%s", cpuName + 1); // we need to skip first character due to it being " "
 
     return 0;
 }
