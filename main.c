@@ -49,14 +49,15 @@ bool fetchHostName(char *hostName)
 bool calcCpuUsage(int *cpuUsage)
 {
     int data[2][10];
+    FILE *fp = fopen("/proc/stat", "r");
+    if (fp == NULL)
+    {
+        fprintf(stderr, "ERROR - cannot open file \"/proc/stat\"\n");
+        return false;
+    }
+
     for (int i = 0; i < 2; i++)
     {
-        FILE *fp = fopen("/proc/stat", "r");
-        if (fp == NULL)
-        {
-            fprintf(stderr, "ERROR - cannot open file \"/proc/stat\"\n");
-            return false;
-        }
         char buffer[10000];
         int j = 0;
 
@@ -78,9 +79,10 @@ bool calcCpuUsage(int *cpuUsage)
             j++;
         }
 
-        fclose(fp);
+        rewind(fp);
         sleep(1);
     }
+    fclose(fp);
 
     int idle[2] = {0, 0};
     int total[2] = {0, 0};
@@ -93,10 +95,10 @@ bool calcCpuUsage(int *cpuUsage)
             total[i] += data[i][j];
         }
     }
-    int totaldif = total[1] - total[0];
-    int idledif = idle[1] - idle[0];
+    int totalDif = total[1] - total[0];
+    int idleDif = idle[1] - idle[0];
 
-    *cpuUsage = 100 * (totaldif - idledif) / totaldif;
+    *cpuUsage = 100 * (totalDif - idleDif) / totalDif;
 
     return true;
 }
