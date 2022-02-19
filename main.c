@@ -3,6 +3,23 @@
 #include <stdbool.h>
 #include <string.h>
 
+bool fetchHostName(char *hostName)
+{
+    FILE *fp = fopen("/proc/sys/kernel/hostname", "r");
+    if (fp == NULL)
+    {
+        fprintf(stderr, "ERROR - cannot open file \"/proc/sys/kernel/hostname\"\n");
+        return false;
+    }
+    if (fgets(hostName, 100, fp) == NULL)
+    {
+        fprintf(stderr, "ERROR - cannot read file \"/proc/sys/kernel/hostname\"\n");
+        return false;
+    }
+
+    return true;
+}
+
 bool calcCpuUsage(float *cpuUsage)
 {
     char buffer[10000];
@@ -64,15 +81,18 @@ int main(int argc, char **argv)
 {
     int port = 0;
     float cpuUsage = 0;
+    char hostName[100];
 
     if (!checkargs(argc, argv, &port) ||
-        !calcCpuUsage(&cpuUsage))
+        !calcCpuUsage(&cpuUsage) ||
+        !fetchHostName(hostName))
     {
         return 1;
     }
 
     printf("%d\n", port);
     printf("%f\n", cpuUsage);
+    printf("%s\n", hostName);
 
     return 0;
 }
