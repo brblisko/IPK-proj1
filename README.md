@@ -8,7 +8,7 @@ Na spustenie projektu si staci stiahnut subory s kodom a Makefile. Nasledne pomo
 
 ### Prerekvizity
 
-Na spravne fungovanie projektu je treba tento software.
+Na spravne prelozenie projektu je treba tento software.
 
 - gcc
 - make
